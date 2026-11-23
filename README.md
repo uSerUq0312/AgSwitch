@@ -5,6 +5,8 @@
 
 **纯 Python 标准库，零第三方依赖**。账号库用 Windows DPAPI 加密。
 
+![AgSwitch 截图](docs/screenshot.png)
+
 ---
 
 ## 它解决什么问题
