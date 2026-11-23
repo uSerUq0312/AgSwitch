@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgSwitch</title>
+<link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" class="logo" aria-hidden="true">
+      <defs>
+        <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7dd3fc"/><stop offset="1" stop-color="#a78bfa"/>
+        </linearGradient>
+      </defs>
+      <path d="M16 3 L27 9.5 V22.5 L16 29 L5 22.5 V9.5 Z" fill="none" stroke="url(#g1)" stroke-width="1.7"/>
+      <circle cx="16" cy="16" r="4" fill="url(#g1)" opacity=".95"/>
+    </svg>
+    <div>
+      <h1>AgSwitch</h1>
+      <p>Antigravity 账号切换器</p>
+    </div>
+  </div>
+  <div class="statusbar">
+    <span class="pill" id="pill-hub">Hub …</span>
+    <span class="pill" id="pill-cred">凭据 …</span>
+    <button class="ghost" id="btn-diagnose">体检</button>
+    <button class="ghost" id="btn-reload">刷新</button>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="banner warn" id="mismatch" hidden>
+    <span id="mismatch-text"></span>
+    <button class="ghost sm" id="btn-fix-email">同步标记</button>
+  </div>
+
+  <section class="card live">
+    <div class="live-left">
+      <div class="avatar" id="live-avatar">?</div>
+      <div class="live-meta">
+        <div class="label-row"><span class="tagline">当前生效</span><span class="dot-live" id="live-dot"></span></div>
+        <div class="email" id="live-email">读取中…</div>
+        <div class="sub" id="live-sub">—</div>
+      </div>
+    </div>
+    <div class="live-actions">
+      <input id="capture-label" class="input" placeholder="给这个账号起个名字（可留空）" />
+      <button class="primary" id="btn-capture">存入账号库</button>
+      <button class="ghost" id="btn-glogin" title="通过 language server 拉起 Google OAuth 登录">登录 / 切换 Google 账号</button>
+    </div>
+  </section>
+
+  <section class="card quota-card">
+    <div class="card-head">
+      <h2>额度 <span class="hint" id="quota-when">—</span></h2>
+      <div class="head-actions">
+        <button class="ghost" id="btn-quota">刷新额度</button>
+      </div>
+    </div>
+    <div id="quota-body">
+      <div class="quota-empty">点「刷新额度」从 Antigravity 拉取</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>账号库 <span class="count" id="count">0</span></h2>
+      <div class="head-actions">
+        <label class="switch" title="清理 Hub 内嵌浏览器的 Cookie / 本地存储（会先备份）">
+          <input type="checkbox" id="opt-clear" /><span>清会话缓存</span>
+        </label>
+        <label class="switch" title="切换后重启 Antigravity 以重新读取凭据">
+          <input type="checkbox" id="opt-restart" checked /><span>重启 Hub</span>
+        </label>
+      </div>
+    </div>
+    <div id="list" class="list"></div>
+    <div class="empty" id="empty" hidden>
+      <p class="big">账号库还是空的</p>
+      <p>① 用账号 A 登录 Antigravity → 点上面「存入账号库」<br />
+         ② 在 Antigravity 里退出登录，换账号 B 登录 → 再存一次<br />
+         ③ 以后点哪一行就切到哪个账号</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>
+        <h2>环境自检</h2>
+        <span class="hint">WSL 报错、启动隐患、凭据体检</span>
+      </summary>
+      <div class="mech" style="margin-top:12px">
+        <div class="env-row">
+          <div>
+            <b>WSL 报错</b>
+            <p class="env-desc">
+              Antigravity 用绝对路径 <code>C:\Windows\System32\wsl.exe</code> 探测 WSL 分发版，
+              没装 WSL 就刷 <code>wsl --list --verbose failed</code>。
+              <b>功能完全不受影响</b>，只是日志难看。PATH 劫持无效（实测），改 SystemRoot 会让它起不来。
+            </p>
+          </div>
+          <div class="env-actions">
+            <button class="ghost" id="btn-wsl-check">检测</button>
+            <button class="ghost" id="btn-wsl-clean">清理历史日志</button>
+            <button class="primary sm" id="btn-wsl-fix">根治命令</button>
+          </div>
+        </div>
+        <div class="env-row">
+          <div>
+            <b>完整体检</b>
+            <p class="env-desc">凭据、邮箱标记、language server、启动隐患一起列出来。</p>
+          </div>
+          <div class="env-actions">
+            <button class="ghost" id="btn-diagnose2">运行体检</button>
+          </div>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <details open>
+      <summary>
+        <h2>底层机制</h2>
+        <span class="hint">账号到底存在哪、切换时改了哪些字节</span>
+      </summary>
+      <div class="mech">
+        <ol>
+          <li><b>身份本体 = 一条 Windows 凭据</b><br />
+            <code>TargetName = "gemini:antigravity"</code>，blob 是 UTF-8 JSON：
+            <code>{"token":{"access_token","token_type","refresh_token","expiry"},"auth_method":"consumer","writer_id":"…"}</code>
+            <br />access_token 约 1 小时过期，refresh_token 长期有效，由 language server 自己续期后写回同一条。</li>
+          <li><b>界面上显示的邮箱 = Hub 本地标记</b><br />
+            <code>%APPDATA%\Antigravity\app_storage.json</code> 的
+            <code>agy.onboarding.lastLoginUsername</code> / <code>lastLoginIsGcpTos</code>，
+            外加 <code>credential-user-scope</code>（<code>udc…</code>）。
+            只换 token 不换这两个字段，界面就会继续显示上一个邮箱。</li>
+          <li><b>切换动作</b><br />
+            写入目标 token → 覆盖邮箱标记与 scope →（可选）清掉 Hub 内嵌浏览器的会话缓存 →
+            重启 <code>Antigravity.exe</code>，它拉起的 <code>language_server.exe</code> 启动时重新 CredRead。</li>
+          <li><b>为什么不能离线续 token</b><br />
+            LS 内置的三个 client_id 都是 Desktop 类型，刷新必须带 <code>client_secret</code>；
+            实测该 secret 不落盘、不进环境变量，二进制里只有残片。
+            所以本工具不伪造刷新：access_token 过期后，切过去让 Antigravity 自己续/重登即可。</li>
+          <li><b>额度数据从哪来</b><br />
+            language server 自己起了一个本地 HTTP 服务
+            （<code>POST http://127.0.0.1:&lt;httpPort&gt;/exa.language_server_pb.LanguageServerService/…</code>，
+            鉴权头 <code>X-Codeium-Csrf-Token</code>，端口和 csrf 在
+            <code>~/.gemini/antigravity/daemon/hub_&lt;port&gt;.json</code>）。
+            额度走的 <code>RetrieveUserQuotaSummary</code>、账号信息走的 <code>GetUserStatus</code>，
+            都是 LS 拿进程内的新鲜 token 去问 Google 后原样转回来的——服务端权威值，不用自己维护 token。</li>
+          <li><b>为什么不能自己拿 token 直连后端</b><br />
+            实测：新建的 token 直连 <code>cloudcode-pa</code> 的额度接口会返回
+            <code>403 You do not have a valid license of this product</code>，
+            因为 LS 调用时会附带额外的授权头。所以走本地 API 而不是直连。</li>
+          <li><b>登出 / 再登录</b><br />
+            「登出」删凭据 + 通知 LS <code>AuthLogout</code> + 重启 Hub；
+            「登录 / 切换 Google 账号」调 LS 的 <code>Login</code>，
+            已登录时它直接返回 <code>hasValidAuth=true</code> 不弹窗，登出后才会给出 <code>auth_url</code>。</li>
+          <li><b>安全</b><br />
+            账号库 <code>accounts.dat</code> 用 DPAPI（CurrentUser）整体加密，换机器/换用户都解不开；
+            每次写盘滚动备份，保留最近 10 份。</li>
+        </ol>
+        <p class="hint" id="store-path"></p>
+      </div>
+    </details>
+  </section>
+</main>
+
+<div class="toast-wrap" id="toast"></div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <h3 id="modal-title">详情</h3>
+    <pre id="modal-body"></pre>
+    <div class="modal-actions">
+      <button class="ghost" id="modal-copy">复制</button>
+      <button class="primary" id="modal-close">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

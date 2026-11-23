@@ -1,0 +1,31 @@
+# ---- 凭据与账号数据（绝对不能提交）----
+accounts.dat
+*.dat
+backups/
+cache-backups/
+wsl-shim/
+wsl-root/
+
+# ---- 运行时产物 ----
+window-profile/
+cdp-profile/
+*.log
+logs/
+tests/shot.png
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+*.spec
+.venv/
+venv/
+
+# ---- 编辑器/系统 ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store
