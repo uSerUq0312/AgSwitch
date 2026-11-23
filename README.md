@@ -30,10 +30,20 @@ Antigravity 的登录态绑死在 `language_server.exe` 进程里，换号要全
 
 ## 快速开始
 
+### 方式 A：下载 exe（无需 Python）
+
+到 [Releases](https://github.com/uSerUq0312/AgSwitch/releases) 下载 `AgSwitch.exe`，双击即可。
+单文件、9 MB，Python 已打包进去。
+
+> 因为是个人构建、没有代码签名，第一次运行 Windows 可能弹 SmartScreen 提示
+> （"更多信息 → 仍要运行"）。作者自己的构建产物 SHA-256 会写在 Release 说明里。
+
+### 方式 B：从源码跑
+
 ```powershell
-git clone https://github.com/<you>/AgSwitch.git
+git clone https://github.com/uSerUq0312/AgSwitch.git
 cd AgSwitch
-python app\main.py          # 需要 Python 3.10+
+python app\main.py          # 需要 Python 3.10+，零第三方依赖
 ```
 
 或者直接双击 `start-agswitch.cmd`。
